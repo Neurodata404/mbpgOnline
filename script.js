@@ -24,7 +24,53 @@ const STATUS_EL = MODAL.querySelector('[data-status]');
 const CASE_DETAILS_EL = MODAL.querySelector('[data-case-details]');
 const OWNER_DETAILS_EL = MODAL.querySelector('[data-owner-details]');
 const GALLERY_EL = MODAL.querySelector('[data-gallery]');
+const GALLERY_BLOCK = MODAL.querySelector('[data-gallery-block]');
+const OWNER_SECTION = MODAL.querySelector('[data-owner-section]');
+const DEPOT_CALLOUT = MODAL.querySelector('[data-depot-callout]');
+const DEPOT_NAME_EL = MODAL.querySelector('[data-depot-name]');
+const DEPOT_META_EL = MODAL.querySelector('[data-depot-meta]');
 const LOADING_WRAP = document.getElementById('loadingWrap');
+
+/* Terjemahan status ke Bahasa Melayu + kelas warna
+   (meliputi semua enum: TowingOperation, TowAssignment, DepotLog, ClampOperation) */
+const STATUS_MS = {
+  /* Peringkat tundaan (TowingOperation) */
+  PRELIFT: ['Dalam Proses Tundaan (Pra-Angkat)', 'warn'],
+  LIFT: ['Kenderaan Sedang Diangkat', 'warn'],
+  POSTLIFT: ['Dalam Perjalanan Ke Depoh', 'warn'],
+  IN_DEPOT: ['Disimpan Di Depoh', 'info'],
+
+  /* Tugasan tunda (TowAssignment) */
+  ASSIGNED: ['Tugasan Tunda Dikeluarkan', 'warn'],
+  ACCEPTED: ['Tunda Dalam Perjalanan', 'warn'],
+  IN_PROGRESS: ['Dalam Proses', 'warn'],
+  REJECTED: ['Tugasan Ditolak', 'muted'],
+  COMPLETED: ['Selesai', 'success'],
+
+  /* Operasi klamp (ClampOperation) */
+  PRE_CLAMP: ['Dalam Proses Klamp', 'warn'],
+  CLAMPED: ['Diklamp', 'danger'],
+  BILL_GENERATED: ['Bil Kompaun Dikeluarkan', 'info'],
+  PAID: ['Bayaran Diterima', 'success'],
+  ESCALATED_TO_TOW: ['Dinaik Taraf Ke Tundaan', 'danger'],
+
+  /* Log depoh (DepotLog) */
+  PENDING_CONFIRMATION: ['Menunggu Pengesahan Depoh', 'warn'],
+  CONFIRMED: ['Disahkan Di Depoh', 'info'],
+  PENDING_DISPOSAL: ['Menunggu Pelupusan', 'warn'],
+  DISPOSED: ['Dilupuskan', 'muted'],
+
+  /* Umum */
+  PENDING: ['Menunggu Tindakan', 'warn'],
+  TOWED: ['Ditunda', 'danger'],
+  RELEASED: ['Dilepaskan', 'success'],
+  CANCELLED: ['Dibatalkan', 'muted']
+};
+
+function translateStatus(raw) {
+  const key = String(raw || '').toUpperCase().replace(/\s+/g, '_');
+  return STATUS_MS[key] || [raw || '—', 'muted'];
+}
 
 const CASE_FIELDS = [
   { label: 'No. Rujukan', key: 'caseRef' },
@@ -42,9 +88,7 @@ const OWNER_FIELDS = [
   { label: 'Nama Pemilik', key: 'ownerName' },
   { label: 'No. Kad Pengenalan', key: 'ownerIdNo' },
   { label: 'Alamat', key: 'ownerAddress' },
-  { label: 'Jenis / Model Kenderaan', key: 'vehicleModel' },
-  { label: 'Lokasi Tuntutan', key: 'releaseYard' },
-  { label: 'Catatan', key: 'remarks' }
+  { label: 'Jenis / Model Kenderaan', key: 'vehicleModel' }
 ];
 
 const closeTriggers = MODAL.querySelectorAll('[data-close]');
@@ -97,6 +141,16 @@ FORM.addEventListener('submit', async event => {
     /* Step 3: Fallback — tow-assignments */
     if (!record) {
       record = await fetchTowAssignmentFallbackRecord(sanitizedPlate);
+    }
+
+    /* Step 4: Depot log — lokasi tuntutan (best-effort) */
+    if (record) {
+      try {
+        const depotLog = await fetchDepotLog(sanitizedPlate);
+        if (depotLog) enrichRecordWithDepot(record, depotLog);
+      } catch (depErr) {
+        console.warn('Depot log gagal (tidak kritikal):', depErr.message);
+      }
     }
 
     if (!record) {
@@ -162,6 +216,20 @@ async function fetchTowingOperationByPlate(plate) {
     console.warn('Towing-operations search gagal:', err.message);
     return null;
   }
+}
+
+async function fetchDepotLog(plate) {
+  const url = `/api/depot-logs?vehicleRegNo=${encodeURIComponent(plate)}&page=0&size=1&sortBy=createdDate&sortDirection=DESC`;
+  const response = await callApi('GET', url);
+  return extractItems(response)[0] || null;
+}
+
+function enrichRecordWithDepot(record, log) {
+  record.depotName = log.depotName || '';
+  record.depotStatus = log.status || '';
+  record.depotIntake = formatDate(log.intakeDatetime) || '';
+  record.depotRelease = formatDate(log.releaseDatetime) || '';
+  if (log.depotName) record.releaseYard = log.depotName;
 }
 
 async function fetchJpjOwner(plate) {
@@ -309,32 +377,64 @@ function formatDate(value) {
 
 function populateModal(record) {
   PLATE_EL.textContent = record.plate;
-  STATUS_EL.textContent = record.status;
-  renderDefinitionList(CASE_DETAILS_EL, CASE_FIELDS, record);
-  renderDefinitionList(OWNER_DETAILS_EL, OWNER_FIELDS, record);
-  renderGallery(record.gallery);
+
+  /* Status pill: teks BM + warna ikut jenis status */
+  const [statusText, statusTone] = translateStatus(record.status);
+  STATUS_EL.textContent = statusText;
+  STATUS_EL.className = 'vehicle-modal__status' +
+    (statusTone !== 'muted' ? ` vehicle-modal__status--${statusTone}` : '');
+
+  /* Depot callout: papar hanya jika ada maklumat depoh */
+  if (!record.depotName && hasValue(record.releaseYard)) {
+    record.depotName = record.releaseYard; /* fallback generik */
+  }
+  if (record.depotName) {
+    const [depotStatusText] = translateStatus(record.depotStatus);
+    DEPOT_NAME_EL.textContent = record.depotName;
+    const metaParts = [];
+    if (record.depotIntake) metaParts.push(`Masuk depoh: ${record.depotIntake}`);
+    if (record.depotStatus) metaParts.push(`Status depoh: ${depotStatusText}`);
+    if (record.depotRelease) metaParts.push(`Dilepaskan: ${record.depotRelease}`);
+    DEPOT_META_EL.textContent = metaParts.join('  ·  ');
+    DEPOT_CALLOUT.hidden = false;
+  } else {
+    DEPOT_CALLOUT.hidden = true;
+  }
+
+  const caseCount = renderDefinitionList(CASE_DETAILS_EL, CASE_FIELDS, record);
+  const ownerCount = renderDefinitionList(OWNER_DETAILS_EL, OWNER_FIELDS, record);
+  const hasImages = renderGallery(record.gallery);
+
+  /* Sembunyi seksyen pemilik jika langsung tiada data & tiada gambar */
+  if (OWNER_SECTION) OWNER_SECTION.hidden = ownerCount === 0 && !hasImages;
+  void caseCount;
+}
+
+function hasValue(v) {
+  return v !== undefined && v !== null && String(v).trim() !== '' && String(v).trim() !== '—';
 }
 
 function renderDefinitionList(container, fields, record) {
   container.innerHTML = '';
+  let count = 0;
   fields.forEach(field => {
+    const value = record[field.key];
+    if (!hasValue(value)) return; /* skip baris kosong — modal lebih kemas */
     const dt = document.createElement('dt');
     dt.textContent = field.label;
     const dd = document.createElement('dd');
-    dd.textContent = record[field.key] || '—';
+    dd.textContent = value;
     container.append(dt, dd);
+    count++;
   });
+  return count;
 }
 
 function renderGallery(images = []) {
   GALLERY_EL.innerHTML = '';
-  if (!images.length) {
-    const placeholder = document.createElement('p');
-    placeholder.className = 'gallery__placeholder';
-    placeholder.textContent = 'Tiada gambar dilampirkan.';
-    GALLERY_EL.appendChild(placeholder);
-    return;
-  }
+  const has = images.length > 0;
+  if (GALLERY_BLOCK) GALLERY_BLOCK.hidden = !has;
+  if (!has) return false;
 
   images.forEach((src, index) => {
     const img = document.createElement('img');
@@ -342,6 +442,7 @@ function renderGallery(images = []) {
     img.alt = `Gambar kesalahan ${index + 1}`;
     GALLERY_EL.appendChild(img);
   });
+  return true;
 }
 
 /* ─── Loading state ────────────────────────────────── */
