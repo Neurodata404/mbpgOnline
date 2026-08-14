@@ -120,7 +120,9 @@ FORM.addEventListener('submit', async event => {
 
     if (clampRecord) {
       record = mapClampToRecord(clampRecord, sanitizedPlate);
-      await tryEnrichWithJpj(record, sanitizedPlate);
+      /* Maklumat pemilik (JPJ) sudah digabung oleh Worker sendiri selepas
+         ia jumpa rekod kes sah — client tak panggil JPJ terus lagi. */
+      enrichRecordWithJpj(record, clampRecord);
     }
 
     /* Step 2: Fallback — towing-operations */
@@ -128,7 +130,7 @@ FORM.addEventListener('submit', async event => {
       const towOpRecord = await fetchTowingOperationByPlate(sanitizedPlate);
       if (towOpRecord) {
         record = mapTowingOperationToRecord(towOpRecord, sanitizedPlate);
-        await tryEnrichWithJpj(record, sanitizedPlate);
+        enrichRecordWithJpj(record, towOpRecord);
       }
     }
 
@@ -169,15 +171,6 @@ FORM.addEventListener('submit', async event => {
 
 function sanitizePlate(value = '') {
   return value.toUpperCase().replace(/[^A-Z0-9]/g, '').trim();
-}
-
-async function tryEnrichWithJpj(record, plate) {
-  try {
-    const jpjData = await fetchJpjOwner(plate);
-    if (jpjData) enrichRecordWithJpj(record, jpjData);
-  } catch (jpjErr) {
-    console.warn('JPJ enrichment gagal (tidak kritikal):', jpjErr.message);
-  }
 }
 
 /* ─── API calls ────────────────────────────────────── */
@@ -242,18 +235,12 @@ function enrichRecordWithDepot(record, log) {
   if (log.depotName) record.releaseYard = log.depotName;
 }
 
-async function fetchJpjOwner(plate) {
-  const today = new Date().toISOString().slice(0, 10);
-  const url = `/api/jpj?registrationNumber=${encodeURIComponent(plate)}&offenceDate=${today}`;
-  return callApi('GET', url);
-}
-
 async function fetchTowAssignmentFallbackRecord(plate) {
   const response = await callApi('POST', '/api/tow-assignments/search', searchPayload(plate));
   const item = extractItems(response)[0];
   if (!item) return null;
 
-  return {
+  const record = {
     plate: item.vehicleRegistrationNo || plate,
     status: item.status || 'Dalam Proses',
     caseRef: item.assignmentId || '—',
@@ -273,6 +260,10 @@ async function fetchTowAssignmentFallbackRecord(plate) {
     remarks: 'Data daripada tow-assignments',
     gallery: []
   };
+
+  /* Maklumat pemilik (JPJ) sudah digabung oleh Worker sendiri jika berjaya. */
+  enrichRecordWithJpj(record, item);
+  return record;
 }
 
 /* ─── Generic API caller ───────────────────────────── */
