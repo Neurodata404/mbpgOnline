@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ms">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sistem Semakan Tundaan MBPG</title>
+    <meta name="description" content="Semak status kenderaan yang ditunda oleh Majlis Perbandaran Pasir Gudang (MBPG)." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=1" />
+    <script defer src="script.js?v=1"></script>
+  </head>
+  <body>
+    <!-- Top Navbar -->
+    <header class="top-nav">
+      <div class="top-nav__inner">
+        <img src="logo-mbpg.png" alt="Logo MBPG" class="top-nav__logo" />
+        <span class="top-nav__title">Majlis Perbandaran Pasir Gudang</span>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero Banner -->
+      <section class="hero">
+        <div class="hero__overlay"></div>
+        <div class="hero__content">
+          <h1>Sistem Semakan <span>Tundaan</span></h1>
+          <p class="hero__untuk">Untuk</p>
+          <p class="hero__subtitle">Integrated Clamp And Towing System (ITCS)</p>
+        </div>
+      </section>
+
+      <!-- Search Card Section -->
+      <section class="search-section">
+        <div class="search-card">
+          <h2 class="search-card__heading">Kereta Anda Ditunda ? Semak sekarang</h2>
+
+          <form id="searchForm" class="search-form" novalidate>
+            <label for="plateInput" class="search-form__label">No. Pendaftaran Kenderaan</label>
+            <input
+              id="plateInput"
+              name="plate"
+              type="text"
+              inputmode="latin"
+              placeholder="Sila Masukkan nombor pendaftaran kenderaan (Contoh : QMP6301)"
+              autocomplete="off"
+              maxlength="15"
+              class="search-form__input"
+            />
+            <div class="search-form__actions">
+              <p class="search-form__feedback" data-feedback></p>
+              <button type="submit" class="search-form__btn">Semak</button>
+            </div>
+            <div id="loadingWrap" class="loading-wrap" hidden aria-live="polite" aria-busy="false">
+              <div class="loading-text">Sedang mencari rekod kenderaan...</div>
+              <div class="loading-bar">
+                <div class="loading-bar__fill" id="loadingBarFill"></div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Steps Infographic Section -->
+      <section class="steps-section" id="langkah" aria-labelledby="steps-title">
+        <div class="steps-header">
+          <h2 id="steps-title">Kenderaan Ditunda? Ikuti Langkah Berikut</h2>
+          <p>Panduan tuntutan kenderaan di depoh MBPG</p>
+        </div>
+
+        <ol class="steps-grid">
+          <li class="step-card">
+            <div class="step-card__top">
+              <span class="step-num">1</span>
+              <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </div>
+            <h3>Sahkan Kenderaan Ditunda</h3>
+            <p>Semak status kenderaan anda di laman web rasmi MBPG Online.</p>
+          </li>
+          <li class="step-card">
+            <div class="step-card__top">
+              <span class="step-num">2</span>
+              <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <h3>Kenal Pasti Depoh</h3>
+            <p>Pastikan lokasi depoh di mana kenderaan anda disimpan.</p>
+          </li>
+          <li class="step-card">
+            <div class="step-card__top">
+              <span class="step-num">3</span>
+              <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h2"/><path d="M15 12h2"/><path d="M7 16h10"/></svg>
+            </div>
+            <h3>Hadir Ke Depoh</h3>
+            <p>Sila bawa dokumen pengenalan seperti Kad Pengenalan (IC).</p>
+          </li>
+          <li class="step-card">
+            <div class="step-card__top">
+              <span class="step-num">4</span>
+              <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+            </div>
+            <h3>Semakan Di Terminal</h3>
+            <p>Buat semakan rekod kenderaan di terminal depoh.</p>
+          </li>
+          <li class="step-card">
+            <div class="step-card__top">
+              <span class="step-num">5</span>
+              <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 7h8"/><path d="M8 11h8"/><path d="M8 15h5"/></svg>
+            </div>
+            <h3>Bayar Kompaun</h3>
+            <p>Jelaskan bayaran kompaun dan simpan resit sebagai bukti.</p>
+          </li>
+          <li class="step-card">
+            <div class="step-card__top">
+              <span class="step-num">6</span>
+              <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6"/></svg>
+            </div>
+            <h3>Maklum Pegawai Bertugas</h3>
+            <p>Tunjukkan resit bayaran kepada pegawai di kaunter depoh.</p>
+          </li>
+          <li class="step-card">
+            <div class="step-card__top">
+              <span class="step-num">7</span>
+              <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <h3>Pengesahan Bayaran</h3>
+            <p>Pegawai akan menyemak dan mengesahkan bayaran anda.</p>
+          </li>
+          <li class="step-card">
+            <div class="step-card__top">
+              <span class="step-num">8</span>
+              <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>
+            </div>
+            <h3>Kenderaan Dilepaskan</h3>
+            <p>Selesai! Kenderaan anda boleh dibawa pulang.</p>
+          </li>
+        </ol>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="site-footer__main">
+        <div class="site-footer__brand">
+          <img src="logo-mbpg.png" alt="Logo MBPG" class="site-footer__logo" />
+          <span class="site-footer__brand-name">Majlis Perbandaran Pasir Gudang</span>
+        </div>
+        <div class="site-footer__contact">
+          <p><strong>Alamat:</strong> Aras 1, Menara Aqabah, Jalan Bandar, 81700 Pasir Gudang, Johor.</p>
+          <p><strong>Tel:</strong> +06 03-26176066</p>
+          <p><strong>Faks:</strong> +06 03-2617322</p>
+          <p><strong>Emel:</strong> mbpg@yopmail.com</p>
+        </div>
+      </div>
+      <div class="site-footer__bottom">
+        <a href="#">Notis Hak Cipta</a>
+        <span class="site-footer__sep">|</span>
+        <a href="#">Penafian</a>
+        <span class="site-footer__sep">|</span>
+        <a href="#">Dasar Privasi &amp; Keselamatan</a>
+        <span class="site-footer__sep">|</span>
+        <a href="#">Soalan Lazim</a>
+        <span class="site-footer__sep">|</span>
+        <a href="#">Peta Laman</a>
+      </div>
+    </footer>
+
+    <!-- Vehicle Modal (unchanged functionality) -->
+    <div class="vehicle-modal" id="vehicleModal" aria-hidden="true">
+      <div class="vehicle-modal__backdrop" data-close></div>
+      <div class="vehicle-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="vehicle-modal__header">
+          <div>
+            <p class="eyebrow">No. Pendaftaran</p>
+            <p class="plate" data-plate>—</p>
+          </div>
+          <div class="vehicle-modal__status" data-status>—</div>
+          <button class="vehicle-modal__close" type="button" data-close aria-label="Tutup modal">✕</button>
+        </div>
+
+        <div class="vehicle-modal__body">
+          <section>
+            <h2 id="modalTitle">Butiran Kesalahan</h2>
+            <dl class="details" data-case-details></dl>
+          </section>
+          <section>
+            <h3>Maklumat Pemilik</h3>
+            <dl class="details" data-owner-details></dl>
+            <div class="gallery-block">
+              <h3>Gambar Kesalahan</h3>
+              <div class="gallery" data-gallery></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
