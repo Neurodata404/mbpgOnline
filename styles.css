@@ -43,10 +43,10 @@ main {
   background:
     linear-gradient(
       110deg,
-      rgba(50, 190, 240, 0.75) 0%,
-      rgba(50, 190, 240, 0.55) 40%,
-      rgba(255, 240, 63, 0.55) 63%,
-      rgba(255, 240, 63, 0.75) 100%
+      rgba(50, 190, 240, 0.45) 0%,
+      rgba(50, 190, 240, 0.30) 40%,
+      rgba(255, 240, 63, 0.30) 63%,
+      rgba(255, 240, 63, 0.45) 100%
     ),
     url('mbpg_baru.jpg') center / cover no-repeat;
   padding-bottom: 4.5rem;
