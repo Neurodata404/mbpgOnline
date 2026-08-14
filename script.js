@@ -11,8 +11,7 @@
    4. POST /api/tow-assignments/search   (fallback 2)
    =================================================== */
 
-/* GANTI dengan URL Worker sebenar selepas deploy, contoh:
-   https://mbpg-itcs-proxy.namakau.workers.dev */
+/* URL proxy Cloudflare Worker (live). Tukar hanya jika Worker baharu di-deploy. */
 const API_BASE_URL = 'https://mbpg-itcs-proxy.mrsaifullahmuhamad23.workers.dev';
 
 const FORM = document.getElementById('searchForm');
@@ -106,11 +105,6 @@ FORM.addEventListener('submit', async event => {
 
   if (!sanitizedPlate) {
     FEEDBACK.textContent = 'Masukkan nombor pendaftaran yang sah.';
-    return;
-  }
-
-  if (API_BASE_URL.indexOf('__WORKER_URL__') !== -1) {
-    FEEDBACK.textContent = 'Konfigurasi sistem belum lengkap. Sila hubungi pentadbir sistem MBPG.';
     return;
   }
 
@@ -218,10 +212,26 @@ async function fetchTowingOperationByPlate(plate) {
   }
 }
 
+/* Status log depoh yang dianggap "penempatan sebenar" — kereta betul-betul
+   sudah disahkan berada di depoh tersebut. PENDING_CONFIRMATION sengaja
+   tidak disertakan kerana ia rekod awal/draf sebelum pegawai sahkan secara
+   fizikal semasa prelift — memaparkannya lebih awal mengelirukan orang awam. */
+const DEPOT_CONFIRMED_STATUSES = ['CONFIRMED', 'PENDING_DISPOSAL', 'DISPOSED'];
+
 async function fetchDepotLog(plate) {
   const url = `/api/depot-logs?vehicleRegNo=${encodeURIComponent(plate)}&page=0&size=1&sortBy=createdDate&sortDirection=DESC`;
   const response = await callApi('GET', url);
-  return extractItems(response)[0] || null;
+  const item = extractItems(response)[0] || null;
+  if (!item) return null;
+
+  /* Semakan keselamatan berganda dua sebelum dipaparkan sebagai lokasi tuntutan: */
+  const plateMatches = !item.vehicleRegistrationNo ||
+    item.vehicleRegistrationNo.toUpperCase() === plate.toUpperCase();
+  const isConfirmedPlacement =
+    DEPOT_CONFIRMED_STATUSES.includes(String(item.status || '').toUpperCase());
+
+  if (!plateMatches || !isConfirmedPlacement) return null;
+  return item;
 }
 
 function enrichRecordWithDepot(record, log) {
